@@ -10,11 +10,11 @@ Version: 0.5.1
 
 import json
 import os
-
+from flask import request, jsonify
 from cryptography.fernet import Fernet, InvalidToken
-from .utils.logger import get_logger
+import logging
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 class APIManager:
     """
@@ -102,6 +102,24 @@ class APIManager:
         else:
             logger.warning("Google Cloud credentials not found")
         return None
+
+    def process_ocr(self):
+        """
+        Process OCR request.
+        """
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+        if file:
+            # Here we'll add the logic to process the file using our existing OCR functionality
+            # For now, we'll just return a dummy response
+            return jsonify({
+                'result': f'OCR processing complete for {file.filename}',
+                'fileToken': 'dummy-token',
+                'originalFilename': file.filename
+            })
 
 # Usage example
 if __name__ == "__main__":

@@ -11,8 +11,8 @@ const DataSetCreation: React.FC = () => {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileUpload = (file: File) => {
-    setSelectedFiles(prevFiles => [...prevFiles, file]);
+  const handleFileUpload = (files: File[]) => {
+    setSelectedFiles(prevFiles => [...prevFiles, ...files]);
     setError(null);
   };
 
