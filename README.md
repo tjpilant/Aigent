@@ -25,11 +25,13 @@ This project implements OCR (Optical Character Recognition) functionality using 
    ```
 
 3. Set up environment variables:
-   - The `.env` file has already been created with placeholders.
-   - Edit the `.env` file and fill in the required values:
-     - Generate a strong JWT_SECRET
-     - Set the GOOGLE_CLOUD_PROCESSOR_ID to your Google Cloud Document AI processor ID
-     - Base64 encode your Google Cloud service account JSON key and set it as AIGENT_430602_JSON
+   - Create a `.env` file in the root directory of the project.
+   - Add the following variables to the `.env` file:
+     ```
+     JWT_SECRET=your_strong_jwt_secret
+     PROCESSOR_ID=your_google_cloud_processor_id
+     ```
+   - For local development, place your Google Cloud service account JSON key file in the project root as `google-cloud-key.json`.
 
 ### Running the Project
 
@@ -63,14 +65,30 @@ curl -X POST -F "file=@path/to/your/image.jpg" -F "ocrMethod=google" http://loca
 
 When working on the project, make sure to:
 - Keep the .env file updated with your local development settings.
-- Do not commit any sensitive information or credentials to the repository.
+- Do not commit the `google-cloud-key.json` file or any sensitive information to the repository.
 - Run tests before submitting pull requests (when tests are implemented).
 
 ## Deployment
 
-When deploying to production, ensure that you set up the following GitHub Secrets:
-- AIGENT_430602_JSON: Base64 encoded Google Cloud service account key
-- JWT_SECRET: A strong secret for JWT token generation
+When deploying to production:
+
+1. Set up the following environment variables or secrets in your deployment platform:
+   - `JWT_SECRET`: A strong secret for JWT token generation
+   - `PROCESSOR_ID`: Your Google Cloud Document AI processor ID
+   - `AIOCR_AIGENT_JSON`: The entire JSON content of your Google Cloud service account key
+
+2. Ensure that your deployment platform supports environment variables with large string values, as the `AIOCR_AIGENT_JSON` will contain the entire service account key.
+
+3. If using GitHub Actions for deployment, set up the following GitHub Secrets:
+   - `AIOCR_AIGENT_JSON`: The entire JSON content of your Google Cloud service account key
+   - `JWT_SECRET`: A strong secret for JWT token generation
+   - `PROCESSOR_ID`: Your Google Cloud Document AI processor ID
+
+## Recent Changes
+
+- The application now supports reading Google Cloud credentials from either an environment variable (`AIOCR_AIGENT_JSON`) or a local file (`google-cloud-key.json`).
+- Improved error handling and logging for credential loading.
+- Updated deployment instructions to reflect the new credential handling method.
 
 ## Contributing
 
