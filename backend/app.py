@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
-from api.api_manager import APIManager
-from config.config import load_config
+from aigent.api.api_manager import APIManager
+from aigent.config.config import load_config
 
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
