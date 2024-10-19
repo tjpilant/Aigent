@@ -114,3 +114,4 @@ ocr-results/
 
 # Google Cloud service account keys
 *.json
+temp_backup/
