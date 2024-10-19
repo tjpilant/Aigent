@@ -10,9 +10,9 @@ Version: 0.5.1
 
 import json
 import os
+import logging
 from flask import request, jsonify
 from cryptography.fernet import Fernet, InvalidToken
-import logging
 
 logger = logging.getLogger(__name__)
 
