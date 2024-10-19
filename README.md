@@ -1,6 +1,6 @@
 # Aigent OCR Project
 
-This project implements OCR (Optical Character Recognition) functionality using Google Cloud Vision API.
+This project implements OCR (Optical Character Recognition) functionality using both Google Cloud Vision API and Tesseract OCR.
 
 ## Setup
 
@@ -51,10 +51,19 @@ npm start
 To use the OCR functionality:
 
 1. Ensure the server is running (development or production).
-2. Send a POST request to `/api/process-ocr` with the following:
+2. Navigate to the web interface (typically http://localhost:3000 for local development).
+3. Select one or multiple files (images or PDFs) to process.
+4. Choose the OCR method (Google Cloud Vision or Tesseract).
+5. Click the "Process Files" button.
+6. Once processing is complete, download buttons will appear for each processed file.
+
+Alternatively, you can use the API directly:
+
+Send a POST request to `/api/process-ocr` with the following:
    - Form data with a 'file' field containing the image or PDF to process.
-   - Form data with an 'ocrMethod' field set to 'google'.
-3. The API will return a JSON response with the OCR results and a file token.
+   - Form data with an 'ocrMethod' field set to either 'google' or 'tesseract'.
+
+The API will return a JSON response with the OCR results and a file token for each processed file.
 
 Example using curl:
 ```
@@ -86,9 +95,11 @@ When deploying to production:
 
 ## Recent Changes
 
+- Added support for Tesseract OCR alongside Google Cloud Vision API.
+- Implemented multi-file selection and processing.
 - The application now supports reading Google Cloud credentials from either an environment variable (`AIOCR_AIGENT_JSON`) or a local file (`google-cloud-key.json`).
-- Improved error handling and logging for credential loading.
-- Updated deployment instructions to reflect the new credential handling method.
+- Improved error handling and logging for credential loading and OCR processing.
+- Updated the user interface to handle multiple file uploads and display results for each processed file.
 
 ## Contributing
 

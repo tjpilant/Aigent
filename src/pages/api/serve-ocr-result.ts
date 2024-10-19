@@ -1,17 +1,26 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import fs from 'fs';
 import path from 'path';
+import jwt from 'jsonwebtoken';
 
 const OCR_RESULTS_DIR = process.env.OCR_RESULTS_DIR || path.join(process.cwd(), '..', 'ocr-results');
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'; // Make sure to set this in production
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { filename } = req.query;
+  const { filename, token } = req.query;
 
-  if (!filename || typeof filename !== 'string') {
-    return res.status(400).json({ error: 'Invalid filename' });
+  if (!filename || typeof filename !== 'string' || !token || typeof token !== 'string') {
+    return res.status(400).json({ error: 'Invalid filename or token' });
   }
 
   try {
+    // Verify the token
+    const decodedToken = jwt.verify(token, JWT_SECRET) as { filename: string };
+    
+    if (decodedToken.filename !== filename) {
+      return res.status(400).json({ error: 'Token does not match filename' });
+    }
+
     // Prevent directory traversal
     const sanitizedFilename = path.basename(filename);
     const filePath = path.join(OCR_RESULTS_DIR, sanitizedFilename);
@@ -27,6 +36,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.send(fileContent);
   } catch (error) {
     console.error('Error serving OCR result:', error);
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
     res.status(500).json({ error: 'Error serving OCR result' });
   }
 }

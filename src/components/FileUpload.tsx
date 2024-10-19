@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 
 interface FileUploadProps {
-  onFileUpload: (file: File) => void;
+  onFileUpload: (files: File[]) => void;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      onFileUpload(file);
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      setSelectedFiles(files);
+      onFileUpload(files);
     }
   };
 
@@ -26,6 +26,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
           id="file-upload"
           accept="image/*,.pdf"
           onChange={handleFileChange}
+          multiple
           className="mt-1 block w-full text-sm text-gray-500
             file:mr-4 file:py-2 file:px-4
             file:rounded-full file:border-0
@@ -34,9 +35,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
             hover:file:bg-blue-100"
         />
       </div>
-      {selectedFile && (
+      {selectedFiles.length > 0 && (
         <p className="mt-2 text-sm text-gray-500">
-          Selected file: {selectedFile.name}
+          Selected files: {selectedFiles.map(file => file.name).join(', ')}
         </p>
       )}
       <p className="mt-2 text-xs text-gray-500">
