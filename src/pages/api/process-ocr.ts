@@ -14,13 +14,23 @@ export const config = {
 const OCR_RESULTS_DIR = process.env.OCR_RESULTS_DIR || path.join(process.cwd(), '..', 'ocr-results');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'; // Make sure to set this in production
 
-// Path to the Google Cloud credentials file
-const credFilePath = path.join(process.cwd(), 'google-cloud-key.json');
+// Fallback function to read credentials from file if environment variable is not set
+function getCredentials() {
+  if (process.env.AIOCR_AIGENT_JSON) {
+    return JSON.parse(process.env.AIOCR_AIGENT_JSON);
+  }
+  
+  const credFilePath = path.join(process.cwd(), 'google-cloud-key.json');
+  if (fs.existsSync(credFilePath)) {
+    return JSON.parse(fs.readFileSync(credFilePath, 'utf8'));
+  }
+  
+  throw new Error('Google Cloud credentials not found. Please set AIOCR_AIGENT_JSON environment variable or provide google-cloud-key.json file.');
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log('OCR processing started');
   console.log('Current working directory:', process.cwd());
-  console.log('Credentials file path:', credFilePath);
   console.log('OCR_RESULTS_DIR:', OCR_RESULTS_DIR);
   console.log('PROCESSOR_ID:', process.env.PROCESSOR_ID);
 
@@ -79,37 +89,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const outputFileName = `${path.parse(originalFileName).name}_ocr_result.md`;
         const outputFilePath = path.join(OCR_RESULTS_DIR, outputFileName);
 
-        // Read credentials from file
-        let credentials;
-        try {
-          if (fs.existsSync(credFilePath)) {
-            credentials = JSON.parse(fs.readFileSync(credFilePath, 'utf8'));
-            console.log('Credentials loaded successfully');
-          } else {
-            console.error('Credentials file not found:', credFilePath);
-            throw new Error('Google Cloud credentials file not found');
-          }
-        } catch (error) {
-          console.error('Error reading credentials file:', error);
-          throw new Error('Failed to load Google Cloud credentials');
-        }
+        const credentials = getCredentials();
 
         const processorId = process.env.PROCESSOR_ID;
         if (!processorId) {
           throw new Error('Missing Google Cloud Processor ID (PROCESSOR_ID)');
         }
 
-        const projectId = credentials.project_id;
-
         console.log('Using Processor ID:', processorId);
-        console.log('Using Project ID:', projectId);
+        console.log('Using Project ID:', credentials.project_id);
 
         const ocrTool = new GoogleCloudVisionOCRTool({
           input_file_path: inputFilePath,
           output_md_file_path: outputFilePath,
           credentials_json: credentials,
           processor_id: processorId,
-          project_id: projectId,
+          project_id: credentials.project_id,
         });
 
         console.log('Starting OCR processing');
