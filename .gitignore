@@ -110,21 +110,7 @@ node_modules/
 
 # Large files and directories
 uploads/
-public/ocr-results/
-*.tif
-*.pdf
+ocr-results/
 
-# Sensitive information
-*.pem
-*.key
-*credentials*.json
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-aigent-frontend/public/ocr-results/*
+# Google Cloud service account keys
+*.json

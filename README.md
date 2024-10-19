@@ -1,88 +1,85 @@
-# AIGENT Project
+# Aigent OCR Project
 
-AIGENT is an AI-powered document processing and analysis system that utilizes advanced OCR techniques and a swarm of AI agents for distributed processing.
+This project implements OCR (Optical Character Recognition) functionality using Google Cloud Vision API.
 
-## Project Structure
-
-The project is organized into the following main components:
-
-- `backend/`: Contains the Python-based backend code
-  - `aigent/`: Main application code
-    - `agency_swarm/`: Implementation of the swarm intelligence architecture
-    - `utils/`: Utility functions and helpers
-  - `tests/`: Unit and integration tests
-
-- `frontend/`: (To be implemented) Will contain the Next.js-based frontend code
-
-- `cline_docs/`: Project documentation and guidelines
-
-## Setup Instructions
+## Setup
 
 ### Prerequisites
 
-- Python 3.8 or higher
-- Poetry (for Python dependency management)
-- Google Cloud account with Document AI and Vision AI enabled
-- OpenAI API key
-- Anthropic API key
+- Node.js (version 14.x or higher)
+- npm (version 6.x or higher)
+- A Google Cloud account with Vision API enabled
+- A Google Cloud service account key with appropriate permissions
 
-### Backend Setup
+### Installation
 
 1. Clone the repository:
    ```
-   git clone https://github.com/your-repo/aigent.git
-   cd aigent
+   git clone https://github.com/your-username/aigent-ocr.git
+   cd aigent-ocr
    ```
 
-2. Install dependencies using Poetry:
+2. Install dependencies:
    ```
-   poetry install
+   npm install
    ```
 
 3. Set up environment variables:
-   Create a `.env` file in the root directory with the following content:
-   ```
-   GOOGLE_CLOUD_KEY=path/to/your/google-cloud-credentials.json
-   OPENAI_API_KEY=your_openai_api_key
-   ANTHROPIC_API_KEY=your_anthropic_api_key
-   ```
+   - The `.env` file has already been created with placeholders.
+   - Edit the `.env` file and fill in the required values:
+     - Generate a strong JWT_SECRET
+     - Set the GOOGLE_CLOUD_PROCESSOR_ID to your Google Cloud Document AI processor ID
+     - Base64 encode your Google Cloud service account JSON key and set it as AIGENT_430602_JSON
 
-4. Initialize the database:
-   ```
-   poetry run python backend/aigent/init_database.py
-   ```
+### Running the Project
 
-5. Run the backend tests:
-   ```
-   poetry run pytest
-   ```
+For development:
+```
+npm run dev
+```
 
-### Running the Application
+For production:
+```
+npm run build
+npm start
+```
 
-Currently, the application is backend-only. To run specific components or tests, use the following commands:
+## Usage
 
-- Run the AI service:
-  ```
-  poetry run python backend/aigent/ai_service.py
-  ```
+To use the OCR functionality:
 
-- Process a document using the swarm:
-  ```
-  poetry run python backend/aigent/aigent_swarm.py
-  ```
+1. Ensure the server is running (development or production).
+2. Send a POST request to `/api/process-ocr` with the following:
+   - Form data with a 'file' field containing the image or PDF to process.
+   - Form data with an 'ocrMethod' field set to 'google'.
+3. The API will return a JSON response with the OCR results and a file token.
 
-## Documentation
+Example using curl:
+```
+curl -X POST -F "file=@path/to/your/image.jpg" -F "ocrMethod=google" http://localhost:3000/api/process-ocr
+```
 
-For more detailed information about the project, refer to the following documentation:
+## Development
 
-- [Codebase Summary](cline_docs/codebaseSummary.md)
-- [Technology Stack](cline_docs/techStack.md)
-- [Error Handling and Logging Guidelines](cline_docs/error_handling_and_logging_guidelines.md)
+When working on the project, make sure to:
+- Keep the .env file updated with your local development settings.
+- Do not commit any sensitive information or credentials to the repository.
+- Run tests before submitting pull requests (when tests are implemented).
+
+## Deployment
+
+When deploying to production, ensure that you set up the following GitHub Secrets:
+- AIGENT_430602_JSON: Base64 encoded Google Cloud service account key
+- JWT_SECRET: A strong secret for JWT token generation
 
 ## Contributing
 
-Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting pull requests.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.

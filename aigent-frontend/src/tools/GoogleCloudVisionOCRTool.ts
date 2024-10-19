@@ -85,7 +85,8 @@ export class GoogleCloudVisionOCRTool extends Tool {
       '.png': 'image/png',
       '.pdf': 'application/pdf',
       '.tiff': 'image/tiff',
-      '.tif': 'image/tiff'
+      '.tif': 'image/tiff',
+      '.txt': 'text/plain'
     };
     return mimeTypes[extension] || 'application/octet-stream';
   }

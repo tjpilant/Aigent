@@ -14,8 +14,15 @@ export const config = {
 const OCR_RESULTS_DIR = process.env.OCR_RESULTS_DIR || path.join(process.cwd(), '..', 'ocr-results');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'; // Make sure to set this in production
 
+// Path to the Google Cloud credentials file
+const credFilePath = path.join(process.cwd(), '..', 'google-cloud-key.json');
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log('OCR processing started');
+  console.log('Current working directory:', process.cwd());
+  console.log('Credentials file path:', credFilePath);
+  console.log('OCR_RESULTS_DIR:', OCR_RESULTS_DIR);
+  console.log('PROCESSOR_ID:', process.env.PROCESSOR_ID);
 
   if (req.method !== 'POST') {
     console.log('Invalid method:', req.method);
@@ -23,13 +30,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const uploadDir = path.join(process.cwd(), '..', 'uploads');
+  console.log('Upload directory:', uploadDir);
   
   // Create directories if they don't exist
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-  if (!fs.existsSync(OCR_RESULTS_DIR)) {
-    fs.mkdirSync(OCR_RESULTS_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+      console.log('Created upload directory');
+    }
+    if (!fs.existsSync(OCR_RESULTS_DIR)) {
+      fs.mkdirSync(OCR_RESULTS_DIR, { recursive: true });
+      console.log('Created OCR results directory');
+    }
+  } catch (error) {
+    console.error('Error creating directories:', error);
+    return res.status(500).json({ error: 'Failed to create necessary directories' });
   }
 
   const form = new IncomingForm({
@@ -39,6 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
 
   form.parse(req, async (err, fields, files) => {
+    console.log('Form parsing started');
     if (err) {
       console.error('Error parsing form:', err);
       return res.status(500).json({ error: 'Error processing file upload' });
@@ -63,23 +79,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const outputFileName = `${path.parse(originalFileName).name}_ocr_result.md`;
         const outputFilePath = path.join(OCR_RESULTS_DIR, outputFileName);
 
-        // Use GitHub secrets for credentials
-        const credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-        const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
-        const processorId = process.env.GOOGLE_CLOUD_PROCESSOR_ID;
-
-        if (!credentials || !projectId || !processorId) {
-          throw new Error('Missing Google Cloud credentials or configuration');
+        // Read credentials from file
+        let credentials;
+        try {
+          if (fs.existsSync(credFilePath)) {
+            credentials = JSON.parse(fs.readFileSync(credFilePath, 'utf8'));
+            console.log('Credentials loaded successfully');
+          } else {
+            console.error('Credentials file not found:', credFilePath);
+            throw new Error('Google Cloud credentials file not found');
+          }
+        } catch (error) {
+          console.error('Error reading credentials file:', error);
+          throw new Error('Failed to load Google Cloud credentials');
         }
+
+        const processorId = process.env.PROCESSOR_ID;
+        if (!processorId) {
+          throw new Error('Missing Google Cloud Processor ID (PROCESSOR_ID)');
+        }
+
+        const projectId = credentials.project_id;
+
+        console.log('Using Processor ID:', processorId);
+        console.log('Using Project ID:', projectId);
 
         const ocrTool = new GoogleCloudVisionOCRTool({
           input_file_path: inputFilePath,
           output_md_file_path: outputFilePath,
-          credentials_json: JSON.parse(credentials),
+          credentials_json: credentials,
           processor_id: processorId,
           project_id: projectId,
         });
 
+        console.log('Starting OCR processing');
         await ocrTool.run();
         console.log('OCR processing completed for:', originalFileName);
         

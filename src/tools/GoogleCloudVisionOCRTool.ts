@@ -37,11 +37,22 @@ export class GoogleCloudVisionOCRTool extends Tool {
   }
 
   private async initializeClient(): Promise<DocumentProcessorServiceClient> {
-    const auth = new GoogleAuth({
-      credentials: this.config.credentials_json,
-      scopes: ['https://www.googleapis.com/auth/cloud-platform']
-    });
-    return new DocumentProcessorServiceClient({ auth });
+    try {
+      console.log('Initializing client with the following credentials:');
+      console.log('Project ID:', this.config.project_id);
+      console.log('Processor ID:', this.config.processor_id);
+      console.log('Location:', this.config.location);
+      console.log('Credentials:', JSON.stringify(this.config.credentials_json, null, 2));
+
+      const auth = new GoogleAuth({
+        credentials: this.config.credentials_json,
+        scopes: ['https://www.googleapis.com/auth/cloud-platform']
+      });
+      return new DocumentProcessorServiceClient({ auth });
+    } catch (error) {
+      console.error('Error initializing client:', error);
+      throw error;
+    }
   }
 
   private async processDocument(client: DocumentProcessorServiceClient): Promise<string> {
@@ -49,6 +60,11 @@ export class GoogleCloudVisionOCRTool extends Tool {
     const mimeType = this.getMimeType(this.config.input_file_path);
 
     const processorName = `projects/${this.config.project_id}/locations/${this.config.location}/processors/${this.config.processor_id}`;
+
+    console.log('Processing document with the following config:');
+    console.log('Processor Name:', processorName);
+    console.log('File MIME Type:', mimeType);
+    console.log('File Size:', fileContent.length, 'bytes');
 
     try {
       const [result] = await client.processDocument({
@@ -65,10 +81,10 @@ export class GoogleCloudVisionOCRTool extends Tool {
 
       return result.document.text;
     } catch (error: any) {
+      console.error('Detailed error:', JSON.stringify(error, null, 2));
       if (error.code === 3 && error.details.includes('Document pages exceed the limit')) {
         throw new Error('Document exceeds the 15-page limit for OCR processing.');
       }
-      console.error('Error processing document:', error);
       throw new Error(`Error processing document: ${error.message}`);
     }
   }
