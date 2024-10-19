@@ -1,3 +1,0 @@
-from aigent.utils.models import Base
-
-# Rest of the file content...
