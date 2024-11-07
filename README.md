@@ -1,114 +1,129 @@
-# Aigent OCR Project
+# Aigent OCR Service
 
-This project implements OCR (Optical Character Recognition) functionality using both Google Cloud Vision API and Tesseract OCR.
+A microservices-based OCR application using Google Cloud Vision and Tesseract.
 
-## Setup
+## Architecture
+
+- Frontend: Next.js with TypeScript
+- Backend: Flask with Python
+- OCR: Google Cloud Vision and Tesseract
+- Containerization: Docker and Docker Compose
+
+## OCR Features
+
+The application supports two OCR engines:
+
+1. Google Cloud Vision OCR
+   - High accuracy for complex documents
+   - Output files use _aiocr.md extension
+
+2. Tesseract OCR
+   - Open-source alternative
+   - Output files use _tesocr.md extension
+
+For detailed information about file naming conventions and supported formats, see [OCR Conventions](backend/aigent/docs/ocr_conventions.md).
+
+## Development Setup
 
 ### Prerequisites
 
-- Node.js (version 14.x or higher)
-- npm (version 6.x or higher)
-- A Google Cloud account with Vision API enabled
-- A Google Cloud service account key with appropriate permissions
+- Docker and Docker Compose
+- Git
+- GitHub account with access to the repository secrets
 
-### Installation
+### Setting Up Credentials
+
+The application uses Google Cloud Vision for OCR processing. The credentials are managed securely through GitHub Secrets.
+
+#### For Local Development
+
+1. Get the base64-encoded credentials from your team lead or system administrator
+2. Set the environment variable:
+   ```bash
+   export AIGENT_430602_JSON='your-base64-encoded-credentials'
+   ```
+3. Run the setup script:
+   ```bash
+   ./scripts/setup-credentials.sh
+   ```
+
+#### For CI/CD
+
+The credentials are automatically handled by GitHub Actions using the repository secret `AIGENT_430602_JSON`.
+
+### Running the Application
 
 1. Clone the repository:
-   ```
-   git clone https://github.com/your-username/aigent-ocr.git
-   cd aigent-ocr
-   ```
-
-2. Install dependencies:
-   ```
-   npm install
+   ```bash
+   git clone <repository-url>
+   cd aigent
    ```
 
-3. Set up environment variables:
-   - Create a `.env` file in the root directory of the project.
-   - Add the following variables to the `.env` file:
-     ```
-     JWT_SECRET=your_strong_jwt_secret
-     PROCESSOR_ID=your_google_cloud_processor_id
-     ```
-   - For local development, place your Google Cloud service account JSON key file in the project root as `google-cloud-key.json`.
+2. Set up credentials as described above
 
-### Running the Project
+3. Start the services:
+   ```bash
+   docker-compose up --build
+   ```
 
-For development:
+The services will be available at:
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+
+## Project Structure
+
 ```
-npm run dev
-```
-
-For production:
-```
-npm run build
-npm start
-```
-
-## Usage
-
-To use the OCR functionality:
-
-1. Ensure the server is running (development or production).
-2. Navigate to the web interface (typically http://localhost:3000 for local development).
-3. Select one or multiple files (images or PDFs) to process.
-4. Choose the OCR method (Google Cloud Vision or Tesseract).
-5. Click the "Process Files" button.
-6. Once processing is complete, download buttons will appear for each processed file.
-
-Alternatively, you can use the API directly:
-
-Send a POST request to `/api/process-ocr` with the following:
-   - Form data with a 'file' field containing the image or PDF to process.
-   - Form data with an 'ocrMethod' field set to either 'google' or 'tesseract'.
-
-The API will return a JSON response with the OCR results and a file token for each processed file.
-
-Example using curl:
-```
-curl -X POST -F "file=@path/to/your/image.jpg" -F "ocrMethod=google" http://localhost:3000/api/process-ocr
+.
+├── aigent-frontend/       # Next.js frontend
+├── backend/              # Flask backend
+│   └── aigent/
+│       ├── docs/         # Documentation
+│       │   └── ocr_conventions.md  # OCR naming conventions
+│       └── tools/        # OCR and utility tools
+├── credentials/          # Mounted credentials (gitignored)
+├── scripts/             # Utility scripts
+├── .github/workflows/    # GitHub Actions workflows
+└── docker-compose.yml    # Service orchestration
 ```
 
-## Development
+## Testing
 
-When working on the project, make sure to:
-- Keep the .env file updated with your local development settings.
-- Do not commit the `google-cloud-key.json` file or any sensitive information to the repository.
-- Run tests before submitting pull requests (when tests are implemented).
+The application includes:
+- Frontend tests using Jest
+- Backend tests using Python unittest
+- Integration tests in CI/CD
 
-## Deployment
+## Security
 
-When deploying to production:
-
-1. Set up the following environment variables or secrets in your deployment platform:
-   - `JWT_SECRET`: A strong secret for JWT token generation
-   - `PROCESSOR_ID`: Your Google Cloud Document AI processor ID
-   - `AIOCR_AIGENT_JSON`: The entire JSON content of your Google Cloud service account key
-
-2. Ensure that your deployment platform supports environment variables with large string values, as the `AIOCR_AIGENT_JSON` will contain the entire service account key.
-
-3. If using GitHub Actions for deployment, set up the following GitHub Secrets:
-   - `AIOCR_AIGENT_JSON`: The entire JSON content of your Google Cloud service account key
-   - `JWT_SECRET`: A strong secret for JWT token generation
-   - `PROCESSOR_ID`: Your Google Cloud Document AI processor ID
-
-## Recent Changes
-
-- Added support for Tesseract OCR alongside Google Cloud Vision API.
-- Implemented multi-file selection and processing.
-- The application now supports reading Google Cloud credentials from either an environment variable (`AIOCR_AIGENT_JSON`) or a local file (`google-cloud-key.json`).
-- Improved error handling and logging for credential loading and OCR processing.
-- Updated the user interface to handle multiple file uploads and display results for each processed file.
+- Credentials are managed securely through GitHub Secrets
+- Local credentials are gitignored
+- The setup script handles credential decoding and placement
+- Credentials are mounted as read-only in containers
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Create a feature branch
+2. Make your changes
+3. Submit a pull request
 
-## License
+The CI/CD pipeline will automatically:
+- Build and test the application
+- Handle credentials securely
+- Run integration tests
 
-This project is licensed under the MIT License.
+## Troubleshooting
+
+If you encounter OCR errors, check:
+1. Credentials are properly set up using the setup script
+2. The credentials file exists in the credentials directory
+3. The credentials file has valid Google Cloud credentials
+4. The GOOGLE_CLOUD_PROCESSOR_ID environment variable is set correctly
+
+### OCR Output Files
+
+If OCR output files are not appearing in the expected location:
+1. Check that the /app/public/ocr-results/ directory exists and has proper permissions
+2. Verify the file naming follows the conventions:
+   - Google Cloud Vision: filename_aiocr.md
+   - Tesseract: filename_tesocr.md
+3. Check the application logs for any file writing errors

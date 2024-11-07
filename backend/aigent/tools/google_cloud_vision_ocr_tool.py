@@ -4,7 +4,7 @@ from google.cloud import documentai
 from google.oauth2 import service_account
 import os
 import json
-from ...utils.logger import get_logger
+from aigent.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

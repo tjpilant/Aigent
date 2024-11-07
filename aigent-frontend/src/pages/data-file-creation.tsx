@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import ErrorMessage from '../components/ErrorMessage';
-import FileUpload from '../components/FileUpload';
+import { FileUpload } from '../components/FileUpload';
 
 const DataFileCreation: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -9,7 +9,8 @@ const DataFileCreation: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fileToken, setFileToken] = useState<string | null>(null);
+  const [downloadToken, setDownloadToken] = useState<string | null>(null);
+  const [originalFilename, setOriginalFilename] = useState<string | null>(null);
 
   const handleFileUpload = (uploadedFile: File) => {
     setFile(uploadedFile);
@@ -26,13 +27,12 @@ const DataFileCreation: React.FC = () => {
     setIsProcessing(true);
     setError(null);
     setResult(null);
-    setFileToken(null);
+    setDownloadToken(null);
+    setOriginalFilename(null);
 
     const formData = new FormData();
     formData.append('file', file);
     formData.append('ocrMethod', ocrMethod);
-
-    console.log('Submitting file:', file.name);
 
     try {
       const apiEndpoint = ocrMethod === 'google' ? '/api/process-ocr' : '/api/process-tesseract-ocr';
@@ -42,14 +42,14 @@ const DataFileCreation: React.FC = () => {
       });
 
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'OCR processing failed');
       }
 
       setResult(data.result);
-      setFileToken(data.fileToken);
+      setDownloadToken(data.downloadUrl);
+      setOriginalFilename(data.originalFilename);
     } catch (err) {
       console.error('Error in OCR processing:', err);
       if (err instanceof Error) {
@@ -59,12 +59,6 @@ const DataFileCreation: React.FC = () => {
       }
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const handleDownload = () => {
-    if (fileToken) {
-      window.location.href = `/api/serve-ocr-result?token=${fileToken}`;
     }
   };
 
@@ -122,15 +116,16 @@ const DataFileCreation: React.FC = () => {
         </form>
         {result && (
           <div className="mt-6 p-4 bg-green-100 rounded-md">
-            <h3 className="font-semibold text-green-800">{file?.name}</h3>
+            <h3 className="font-semibold text-green-800">{originalFilename}</h3>
             <p className="text-green-700">{result}</p>
-            {fileToken && (
-              <button
-                onClick={handleDownload}
+            {downloadToken && (
+              <a
+                href={`/api/serve-ocr-result?token=${downloadToken}`}
+                download
                 className="mt-2 inline-block px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Download OCR Result
-              </button>
+              </a>
             )}
           </div>
         )}

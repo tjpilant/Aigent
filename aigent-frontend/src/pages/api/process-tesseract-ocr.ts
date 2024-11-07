@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import path from 'path';
+import jwt from 'jsonwebtoken';
 import { TesseractOCRTool } from '../../tools/TesseractOCRTool';
 
 export const config = {
@@ -53,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
       console.log('Processing file:', file.originalFilename);
-      const outputFileName = `${path.parse(file.originalFilename || '').name}_ocr_result.md`;
+      const outputFileName = `${path.parse(file.originalFilename || '').name}_tesocr.md`;
       const outputFilePath = path.join(outputDir, outputFileName);
 
       console.log('Output file path:', outputFilePath);
@@ -66,12 +67,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Clean up the uploaded file
       fs.unlinkSync(file.filepath);
 
-      const downloadUrl = `/ocr-results/${outputFileName}`;
+      // Generate JWT token for file access
+      const token = jwt.sign(
+        { 
+          filename: outputFileName,
+          exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour
+        },
+        process.env.JWT_SECRET || 'your-secret-key'
+      );
 
       res.status(200).json({
         result: `OCR processing complete for ${file.originalFilename}`,
-        downloadUrl,
-        originalFilename: file.originalFilename || 'unnamed'
+        downloadUrl: token,
+        filePath: outputFilePath,
+        originalFilename: file.originalFilename
       });
     } catch (error: unknown) {
       console.error('Error processing OCR:', error);

@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - GOOGLE_CLOUD_PROCESSOR_ID=cdbb7ba4f9c316d0
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/credentials.json
+    volumes:
+      - ./credentials:/app/credentials:ro
+      - ./public/ocr-results:/app/public/ocr-results
+      - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./aigent-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      - GOOGLE_CLOUD_PROCESSOR_ID=cdbb7ba4f9c316d0
+    volumes:
+      - ./uploads:/app/uploads
+      - ./public/ocr-results:/app/public/ocr-results
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge

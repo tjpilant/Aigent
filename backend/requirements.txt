@@ -1,7 +1,6 @@
-# Agency Swarm Framework
-agency-swarm==0.1.0  # Replace with the actual version you're using
-
-# Additional dependencies
-# Add any other dependencies your project might need, for example:
-# requests==2.26.0
-# python-dotenv==0.19.1
+flask==2.0.1
+gunicorn==21.2.0
+google-cloud-documentai==2.20.1
+flask-cors==4.0.0
+werkzeug==2.0.1
+pydantic==2.5.1

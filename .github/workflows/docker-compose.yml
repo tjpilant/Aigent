@@ -1,0 +1,52 @@
+name: Docker Compose CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    env:
+      GOOGLE_CLOUD_PROCESSOR_ID: cdbb7ba4f9c316d0
+      AIGENT_430602_JSON: ${{ secrets.AIGENT_430602_JSON }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Create required directories
+      run: |
+        mkdir -p uploads
+        mkdir -p public/ocr-results
+
+    - name: Set up credentials
+      run: |
+        chmod +x scripts/setup-credentials.sh
+        ./scripts/setup-credentials.sh
+
+    - name: Build and run containers
+      run: docker-compose up -d --build
+
+    - name: Check running containers
+      run: docker-compose ps
+
+    - name: Wait for services to be ready
+      run: |
+        timeout 30s bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8000/health)" != "200" ]]; do sleep 5; done' || false
+
+    - name: Run backend tests
+      run: |
+        docker-compose exec -T backend python -m pytest
+
+    - name: Run frontend tests
+      run: |
+        docker-compose exec -T frontend npm test
+
+    - name: Cleanup
+      if: always()
+      run: |
+        docker-compose down
+        rm -f credentials/credentials.json

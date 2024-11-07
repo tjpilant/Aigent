@@ -1,9 +1,8 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { IncomingForm, File } from 'formidable';
-import fs from 'fs';
-import path from 'path';
-import jwt from 'jsonwebtoken';
-import { GoogleCloudVisionOCRTool } from '../../tools/GoogleCloudVisionOCRTool';
+import type { NextApiRequest, NextApiResponse } from "next";
+import { IncomingForm, Fields, Files } from "formidable";
+import fs from "fs";
+import path from "path";
+import jwt from "jsonwebtoken";
 
 export const config = {
   api: {
@@ -11,144 +10,96 @@ export const config = {
   },
 };
 
-const OCR_RESULTS_DIR = process.env.OCR_RESULTS_DIR || path.join(process.cwd(), '..', 'ocr-results');
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'; // Make sure to set this in production
+const OCR_RESULTS_DIR = '/app/public/ocr-results';
+const BACKEND_URL = 'http://backend:8000';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-// Path to the Google Cloud credentials file
-const credFilePath = path.join(process.cwd(), '..', 'google-cloud-key.json');
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log('OCR processing started');
-  console.log('Current working directory:', process.cwd());
-  console.log('Credentials file path:', credFilePath);
-  console.log('OCR_RESULTS_DIR:', OCR_RESULTS_DIR);
-  console.log('PROCESSOR_ID:', process.env.PROCESSOR_ID);
-
-  if (req.method !== 'POST') {
-    console.log('Invalid method:', req.method);
-    return res.status(405).json({ error: 'Method not allowed' });
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const uploadDir = path.join(process.cwd(), '..', 'uploads');
-  console.log('Upload directory:', uploadDir);
-  
-  // Create directories if they don't exist
   try {
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-      console.log('Created upload directory');
-    }
-    if (!fs.existsSync(OCR_RESULTS_DIR)) {
-      fs.mkdirSync(OCR_RESULTS_DIR, { recursive: true });
-      console.log('Created OCR results directory');
-    }
-  } catch (error) {
-    console.error('Error creating directories:', error);
-    return res.status(500).json({ error: 'Failed to create necessary directories' });
-  }
+    const form = new IncomingForm({
+      uploadDir: "/app/uploads",
+      keepExtensions: true,
+    });
 
-  const form = new IncomingForm({
-    uploadDir: uploadDir,
-    keepExtensions: true,
-    multiples: false,
-  });
+    const { fields, files } = await new Promise<{
+      fields: Fields;
+      files: Files;
+    }>((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err);
+        resolve({ fields, files });
+      });
+    });
 
-  form.parse(req, async (err, fields, files) => {
-    console.log('Form parsing started');
-    if (err) {
-      console.error('Error parsing form:', err);
-      return res.status(500).json({ error: 'Error processing file upload' });
+    if (!files.file) {
+      return res.status(400).json({ error: "No file uploaded" });
     }
 
-    console.log('Fields:', fields);
-    console.log('Files:', files);
-
-    const ocrMethod = Array.isArray(fields.ocrMethod) ? fields.ocrMethod[0] : fields.ocrMethod;
     const file = Array.isArray(files.file) ? files.file[0] : files.file;
+    const ocrMethod = Array.isArray(fields.ocrMethod) ? fields.ocrMethod[0] : fields.ocrMethod || 'google';
 
-    if (!file || !ocrMethod) {
-      console.log('Missing required fields');
-      return res.status(400).json({ error: 'Missing required fields' });
+    // Ensure directories exist
+    fs.mkdirSync(OCR_RESULTS_DIR, { recursive: true });
+
+    // Read file and convert to base64
+    const fileContent = fs.readFileSync(file.filepath);
+    const base64Content = fileContent.toString('base64');
+
+    // Forward to backend
+    const formData = new URLSearchParams();
+    formData.append('fileContent', base64Content);
+    formData.append('fileName', file.originalFilename || 'unnamed');
+    formData.append('ocrMethod', ocrMethod);
+
+    const backendResponse = await fetch(`${BACKEND_URL}/process-ocr`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+    });
+
+    const backendResult = await backendResponse.json();
+
+    if (!backendResponse.ok) {
+      throw new Error(backendResult.error || 'Backend processing failed');
     }
 
+    // Clean up temporary file
     try {
-      if (ocrMethod === 'google') {
-        console.log('Processing file:', file.originalFilename);
-        const inputFilePath = file.filepath;
-        const originalFileName = file.originalFilename || 'unnamed';
-        const outputFileName = `${path.parse(originalFileName).name}_ocr_result.md`;
-        const outputFilePath = path.join(OCR_RESULTS_DIR, outputFileName);
-
-        // Read credentials from file
-        let credentials;
-        try {
-          if (fs.existsSync(credFilePath)) {
-            credentials = JSON.parse(fs.readFileSync(credFilePath, 'utf8'));
-            console.log('Credentials loaded successfully');
-          } else {
-            console.error('Credentials file not found:', credFilePath);
-            throw new Error('Google Cloud credentials file not found');
-          }
-        } catch (error) {
-          console.error('Error reading credentials file:', error);
-          throw new Error('Failed to load Google Cloud credentials');
-        }
-
-        const processorId = process.env.PROCESSOR_ID;
-        if (!processorId) {
-          throw new Error('Missing Google Cloud Processor ID (PROCESSOR_ID)');
-        }
-
-        const projectId = credentials.project_id;
-
-        console.log('Using Processor ID:', processorId);
-        console.log('Using Project ID:', projectId);
-
-        const ocrTool = new GoogleCloudVisionOCRTool({
-          input_file_path: inputFilePath,
-          output_md_file_path: outputFilePath,
-          credentials_json: credentials,
-          processor_id: processorId,
-          project_id: projectId,
-        });
-
-        console.log('Starting OCR processing');
-        await ocrTool.run();
-        console.log('OCR processing completed for:', originalFileName);
-        
-        // Clean up the uploaded file
-        fs.unlinkSync(inputFilePath);
-
-        // Generate a token for secure file access
-        const token = generateToken(outputFileName);
-
-        res.status(200).json({ 
-          result: `OCR processing complete for ${originalFileName}`,
-          fileToken: token,
-          originalFilename: originalFileName
-        });
-      } else if (ocrMethod === 'tesseract') {
-        console.log('Tesseract OCR not implemented for:', file.originalFilename);
-        res.status(200).json({ 
-          result: `Tesseract OCR not yet implemented for ${file.originalFilename}`,
-          fileToken: '',
-          originalFilename: file.originalFilename || 'unnamed'
-        });
-      } else {
-        console.log('Invalid OCR method');
-        throw new Error('Invalid OCR method');
-      }
+      fs.unlinkSync(file.filepath);
     } catch (error) {
-      console.error('Error processing OCR:', error);
-      if (error instanceof Error && error.message.includes('Document exceeds the 15-page limit')) {
-        res.status(400).json({ error: 'The document exceeds the 15-page limit for OCR processing. Please upload a smaller document.' });
-      } else {
-        res.status(500).json({ error: 'Error processing OCR: ' + (error instanceof Error ? error.message : String(error)) });
-      }
+      console.error('Error cleaning up temporary file:', error);
     }
-  });
-}
 
-function generateToken(filename: string): string {
-  return jwt.sign({ filename }, JWT_SECRET, { expiresIn: '1h' });
+    // Generate token for file access
+    const outputFileName = `${path.parse(file.originalFilename || '').name}_aiocr.md`;
+    const token = jwt.sign(
+      { 
+        filename: outputFileName,
+        exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour
+      },
+      JWT_SECRET
+    );
+
+    res.status(200).json({
+      success: true,
+      result: backendResult.message,
+      downloadUrl: token,
+      filePath: backendResult.filePath,
+      originalFilename: file.originalFilename
+    });
+  } catch (error) {
+    console.error("Error processing file:", error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : "Error processing file" 
+    });
+  }
 }
