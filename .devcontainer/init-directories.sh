@@ -1,7 +1,18 @@
 #!/bin/bash
-mkdir -p /app/uploads
-mkdir -p /app/public/ocr-results
-chown -R node:node /app/uploads
-chown -R node:node /app/public/ocr-results
-chmod 755 /app/uploads
-chmod 755 /app/public/ocr-results 
+
+# Create necessary directories
+mkdir -p /workspace/uploads
+mkdir -p /workspace/public/ocr-results
+mkdir -p /workspace/credentials
+
+# Set up Python virtual environment
+python3 -m venv /workspace/.venv
+source /workspace/.venv/bin/activate
+
+# Install Python requirements if they exist
+if [ -f "/workspace/requirements.txt" ]; then
+    pip install -r /workspace/requirements.txt
+fi
+
+# Keep container running
+exec "$@"

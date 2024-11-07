@@ -1,0 +1,18 @@
+# Backend Dependencies
+flask==2.0.1
+gunicorn==21.2.0
+google-cloud-documentai==2.20.1
+flask-cors==4.0.0
+werkzeug==2.0.1
+pydantic==2.5.1
+
+# Development Tools
+black==23.11.0  # Code formatting
+pylint==3.0.2   # Code linting
+pytest==7.4.3   # Testing
+pytest-cov==4.1.0  # Test coverage
+python-dotenv==1.0.0  # Environment variables
+ipython==8.17.2  # Enhanced Python REPL
+
+# Debugging Tools
+debugpy==1.8.0  # Required for VS Code debugging
