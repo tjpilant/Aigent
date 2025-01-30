@@ -17,6 +17,10 @@
   - [x] Implement file naming convention (_aiocr.md)
   - [x] Test file access
 - [x] Implement result downloading
+- [x] Update technical documentation
+  - [x] Add agency-swarm framework details
+  - [x] Document Docker-in-Docker configuration
+  - [x] Formalize security practices
   - [x] Add download button
   - [x] Handle file serving
   - [x] Maintain consistent file naming
