@@ -1,34 +1,44 @@
-version: "3.8"
+
 services:
-  frontend:
-    build: ./aigent-frontend
+  aigent-frontend:
+    build: 
+        context: .
+        dockerfile: .devcontainer/aigent-frontend/Dockerfile
+    volumes:
+      - ./aigent-frontend:/workspace
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=production
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://backend:8000
+      - PORT=3000
     networks:
-      - aigent-net
+      - dev-network
 
   backend:
-    build: ./backend
-    ports:
-      - "5000:5000"
+    build: 
+        context: .
+        dockerfile: .devcontainer/backend/Dockerfile
     volumes:
-      - ./uploads:/app/uploads
+      - ./backend:/workspace
+      - uploads-data:/app/uploads   # Persistent upload directory
+    ports:
+      - "8000:8000"
     environment:
-      - FLASK_ENV=production
-      - UPLOAD_DIR=/app/uploads
-    healthcheck:
-      test: ["CMD-SHELL", "curl --fail http://localhost:5000/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - FLASK_ENV=development
+      - FLASK_APP=main.py
+      - PORT=8000
+      - UPLOAD_FOLDER=/app/uploads  # Set upload folder in environment
     networks:
-      - aigent-net
+      - dev-network
 
+
+# ✅ Make sure the network is explicitly defined here
 networks:
-  aigent-net:
+  dev-network:
     driver: bridge
+
+volumes:
+  uploads-data:  # Define shared volume for uploads

@@ -1,0 +1,17 @@
+{
+  "name": "Aigent Frontend",
+  "dockerComposeFile": "../../docker-compose.yml",
+  "service": "aigent-frontend",
+  "workspaceFolder": "/app",
+  "forwardPorts": [3000],
+  "postCreateCommand": "npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "saoudrizwan.claude-dev"
+      ]
+    }
+  }
+}
