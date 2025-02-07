@@ -27,12 +27,16 @@
   - pydantic for data validation
 
 ## Infrastructure
-- **Containerization**: Docker Compose
-- **CI/CD**: GitHub Actions
+- **Containerization**: 
+  - Docker Compose orchestration
+  - Separate frontend/backend containers
+  - .devcontainer configuration
+- **CI/CD**: GitHub Actions with secret injection
 - **Monitoring**: 
   - Container health checks
   - Resource metrics collection
   - Log aggregation pipeline
+  - Security audit logging
 
 ## Security
 - **Authentication**: Service Account credentials

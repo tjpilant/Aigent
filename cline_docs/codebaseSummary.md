@@ -64,10 +64,14 @@
 - **Health Checks**: System status monitoring
 
 ### Infrastructure
+- **Docker Architecture**: 
+  - Separate containers for frontend (aigent-frontend) and backend services
+  - Container definitions in .devcontainer directory
+  - Central orchestration via root docker-compose.yml
 - **Docker Containers**: Isolated environments
 - **Volume Mounts**: Persistent storage for OCR results
 - **Network**: Internal container communication
-- **Credentials**: Secure credential management
+- **Credentials**: Secure credential management via mounted secrets directory
 
 ## Data Flow
 
